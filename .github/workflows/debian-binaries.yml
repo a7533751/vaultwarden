@@ -5,6 +5,11 @@ permissions:
 
 on:
   workflow_dispatch:
+    inputs:
+      feature_set:
+        description: 'Cargo features to enable (space separated)'
+        required: false
+        default: 'sqlite mysql postgresql vendored_openssl'
   push:
     tags:
       - 'debian-*'
@@ -50,7 +55,8 @@ jobs:
         shell: bash
         run: |
           source "$CARGO_HOME/env"
-          tools/build-debian-binary.sh --suite ${{ matrix.suite }} --install-deps --out-dir artifacts
+          FEATURES="${{ github.event.inputs.feature_set && github.event.inputs.feature_set || 'sqlite mysql postgresql vendored_openssl' }}"
+          tools/build-debian-binary.sh --suite ${{ matrix.suite }} --install-deps --features "$FEATURES" --out-dir artifacts
       - name: Upload binary artefact
         uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.4.3
         with:
