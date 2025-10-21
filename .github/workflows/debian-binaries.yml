@@ -1,0 +1,58 @@
+name: Debian Binaries
+permissions:
+  contents: read
+  actions: read
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'debian-*'
+
+jobs:
+  build:
+    name: Build Debian ${{ matrix.suite }} binary
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        include:
+          - suite: buster
+            image: debian:buster-slim
+          - suite: bullseye
+            image: debian:bullseye-slim
+    container:
+      image: ${{ matrix.image }}
+    env:
+      CARGO_HOME: /github/home/.cargo
+      RUSTUP_HOME: /github/home/.rustup
+      OPENSSL_STATIC: 1
+    steps:
+      - name: Prepare apt repositories
+        run: |
+          if [ "${{ matrix.suite }}" = "buster" ]; then
+            sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list
+            sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list
+            printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99-oldrelease
+            printf 'Acquire::AllowInsecureRepositories "true";\n' >> /etc/apt/apt.conf.d/99-oldrelease
+          fi
+          apt-get -o Acquire::Check-Valid-Until=false update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            curl \
+            ca-certificates
+      - name: Install Rust toolchain 1.89.0
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.89.0 --profile minimal
+          echo "$CARGO_HOME/bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        with:
+          fetch-depth: 0
+      - name: Build Vaultwarden binary
+        run: |
+          source "$CARGO_HOME/env"
+          tools/build-debian-binary.sh --suite ${{ matrix.suite }} --install-deps --out-dir artifacts
+      - name: Upload binary artefact
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.4.3
+        with:
+          name: vaultwarden-${{ matrix.suite }}
+          path: artifacts/*.tar.gz
+          if-no-files-found: error
