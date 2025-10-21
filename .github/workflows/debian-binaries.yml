@@ -47,6 +47,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Build Vaultwarden binary
+        shell: bash
         run: |
           source "$CARGO_HOME/env"
           tools/build-debian-binary.sh --suite ${{ matrix.suite }} --install-deps --out-dir artifacts
