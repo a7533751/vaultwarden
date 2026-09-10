@@ -37,9 +37,13 @@ jobs:
           if [ "${{ matrix.suite }}" = "buster" ]; then
             sed -i 's|deb.debian.org|archive.debian.org|g' /etc/apt/sources.list
             sed -i 's|security.debian.org|archive.debian.org|g' /etc/apt/sources.list
-            printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99-oldrelease
-            printf 'Acquire::AllowInsecureRepositories "true";\n' >> /etc/apt/apt.conf.d/99-oldrelease
+          else
+            printf '%s\n' \
+              'deb [trusted=yes check-valid-until=no] http://archive.debian.org/debian bullseye main' \
+              > /etc/apt/sources.list
           fi
+          printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99-oldrelease
+          printf 'Acquire::AllowInsecureRepositories "true";\n' >> /etc/apt/apt.conf.d/99-oldrelease
           apt-get -o Acquire::Check-Valid-Until=false update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             curl \
