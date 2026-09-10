@@ -55,6 +55,27 @@ Acquire::AllowInsecureRepositories "true";
 CONF
 }
 
+
+configure_bullseye_snapshot_sources() {
+  local snapshot="${DEBIAN_SNAPSHOT:-20260907T000000Z}"
+  local sources="/etc/apt/sources.list"
+
+  if [[ "${BUILD_SUITE:-}" != "bullseye" || ! -f "${sources}" ]]; then
+    return 0
+  fi
+
+  # Bullseye security packages can disappear from deb.debian.org while the
+  # Release index still advertises them. Snapshot pins a consistent package
+  # set for the build and avoids transient 404s.
+  sed -i \
+    -e "s|https\?://deb.debian.org/debian-security|https://snapshot.debian.org/archive/debian-security/${snapshot}|g" \
+    -e "s|http://deb.debian.org/debian-security|https://snapshot.debian.org/archive/debian-security/${snapshot}|g" \
+    -e "s|https\?://deb.debian.org/debian|https://snapshot.debian.org/archive/debian/${snapshot}|g" \
+    -e "s|http://deb.debian.org/debian|https://snapshot.debian.org/archive/debian/${snapshot}|g" \
+    -e 's|^deb |deb [trusted=yes check-valid-until=no] |' \
+    "${sources}"
+}
+
 ensure_clean_toolchain() {
   if [[ ! -f rust-toolchain.toml ]]; then
     echo "rust-toolchain.toml not found; run from the project root." >&2
@@ -69,6 +90,7 @@ install_dependencies() {
   fi
 
   configure_old_release_sources "${BUILD_SUITE:-}"
+  configure_bullseye_snapshot_sources
 
   # Debian's archived/old-stable suites can expose expired Release metadata
   # even when the mirror itself is reachable. Keep the validity override for
