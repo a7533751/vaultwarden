@@ -70,11 +70,10 @@ install_dependencies() {
 
   configure_old_release_sources "${BUILD_SUITE:-}"
 
-  if [[ -n "${BUILD_SUITE:-}" && "${BUILD_SUITE}" == "buster" ]]; then
-    apt-get -o Acquire::Check-Valid-Until=false update
-  else
-    apt-get update
-  fi
+  # Debian's archived/old-stable suites can expose expired Release metadata
+  # even when the mirror itself is reachable. Keep the validity override for
+  # both suites so the dependency install does not fail on stale timestamps.
+  apt-get -o Acquire::Check-Valid-Until=false update
 
   echo "Installing build prerequisites..."
   DEBIAN_FRONTEND=noninteractive \
