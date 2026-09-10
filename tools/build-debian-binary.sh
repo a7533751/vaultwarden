@@ -90,11 +90,13 @@ install_dependencies() {
   # Debian's archived/old-stable suites can expose expired Release metadata
   # even when the mirror itself is reachable. Keep the validity override for
   # both suites so the dependency install does not fail on stale timestamps.
+  rm -rf /var/lib/apt/lists/*
+  mkdir -p /var/lib/apt/lists/partial
   apt-get -o Acquire::Check-Valid-Until=false update
 
   echo "Installing build prerequisites..."
   DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends \
+    apt-get install -y --allow-downgrades --no-install-recommends \
       build-essential \
       clang \
       git \

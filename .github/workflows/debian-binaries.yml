@@ -44,6 +44,8 @@ jobs:
           fi
           printf 'Acquire::Check-Valid-Until "false";\n' > /etc/apt/apt.conf.d/99-oldrelease
           printf 'Acquire::AllowInsecureRepositories "true";\n' >> /etc/apt/apt.conf.d/99-oldrelease
+          rm -rf /var/lib/apt/lists/*
+          mkdir -p /var/lib/apt/lists/partial
           apt-get -o Acquire::Check-Valid-Until=false update
           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
             curl \
