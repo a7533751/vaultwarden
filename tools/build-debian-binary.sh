@@ -95,17 +95,36 @@ install_dependencies() {
   apt-get -o Acquire::Check-Valid-Until=false update
 
   echo "Installing build prerequisites..."
+  local packages=(
+    build-essential
+    clang
+    git
+    pkg-config
+    libpq-dev
+    libmariadb-dev
+    libssl-dev
+    zlib1g-dev
+    ca-certificates
+  )
+
+  # The Bullseye archive is internally consistent, but the runner image may
+  # already contain newer libc/OpenSSL/Perl packages.  Pin the package
+  # families whose dependencies require matching versions so apt performs a
+  # complete downgrade instead of mixing the runner state with the archive.
+  if [[ "${BUILD_SUITE:-}" == "bullseye" ]]; then
+    packages+=(
+      'libc6=2.31-13+deb11u11'
+      'libc6-dev=2.31-13+deb11u11'
+      'libc6-i386=2.31-13+deb11u11'
+      'libssl1.1=1.1.1w-0+deb11u1'
+      'libssl-dev=1.1.1w-0+deb11u1'
+      'perl-base=5.32.1-4+deb11u3'
+      'perl=5.32.1-4+deb11u3'
+    )
+  fi
+
   DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --allow-downgrades --no-install-recommends \
-      build-essential \
-      clang \
-      git \
-      pkg-config \
-      libpq-dev \
-      libmariadb-dev \
-      libssl-dev \
-      zlib1g-dev \
-      ca-certificates
+    apt-get install -y --allow-downgrades --no-install-recommends "${packages[@]}"
 }
 
 parse_rust_version() {
