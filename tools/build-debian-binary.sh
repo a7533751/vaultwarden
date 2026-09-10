@@ -59,12 +59,12 @@ CONF
 configure_debian_archive_sources() {
   local sources="/etc/apt/sources.list"
 
-  if [[ "${BUILD_SUITE:-}" != "buster" && "${BUILD_SUITE:-}" != "bullseye" ]]; then
+  if [[ "${BUILD_SUITE:-}" != "bullseye" ]]; then
     return 0
   fi
 
-  # Buster and Bullseye security mirrors can retain stale indexes while the
-  # advertised .deb files disappear. Use the archived base suite, which has a
+  # Bullseye security mirrors can retain stale indexes while the advertised
+  # .deb files disappear. Use the archived base suite, which has a
   # self-consistent package index and contains all build prerequisites.
   cat >"${sources}" <<EOF
 deb [trusted=yes check-valid-until=no] http://archive.debian.org/debian ${BUILD_SUITE} main
